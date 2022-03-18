@@ -1,28 +1,47 @@
-using Microsoft.OpenApi.Models;
+using System;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-
-builder.Services.AddControllers();
-builder.Services.AddSwaggerGen(c =>
+internal static class Program
 {
-    c.SwaggerDoc("v1", new() { Title = "TheMonolith", Version = "v1" });
-});
+    private static (string environment, string[] args) DeriveEnvironment(string[] args) =>
+        args.Length switch
+        {
+            0 => (Environment.MachineName, args),
+            1 => (args[0], Array.Empty<string>()),
+            _ => (args[0], args[1..])
+        };
 
-var app = builder.Build();
+    private static IConfiguration BuildConfiguration(string[] args, string environment)
+    {
+        var builder = new ConfigurationBuilder();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "TheMonolith v1"));
+        builder.AddIniFile("_config.ini")
+               .AddIniFile($"_config.{environment}.ini", true)
+               .AddEnvironmentVariables()
+               .AddCommandLine(args)
+               .AddUserSecrets("snabel-secrets");
+        
+        return builder.Build();
+    }
+    
+    internal static async Task Main(string[] args)
+    {
+        var (environment, configurationArgs) = DeriveEnvironment(args);
+        var configuration = BuildConfiguration(configurationArgs, environment);
+
+        var options = configuration.Instance<ServiceOptions>();
+        
+        var hostBuilder = new WebHostBuilder();
+        hostBuilder.UseUrls("http://localhost:8080")
+                   .UseConfiguration(configuration)
+                   .UseStartup<Startup>()
+                   .UseEnvironment(environment)
+                   .UseUrls(options.Urls.Split(';'))
+                   .UseKestrel();
+
+        var host = hostBuilder.Build();
+        await host.RunAsync();
+    }
 }
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();
