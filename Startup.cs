@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using TheMonolith.Database;
+using TheMonolith.Database.Repositories;
 
 public class Startup
 {
@@ -26,6 +27,7 @@ public class Startup
 
         services.Options<ServiceOptions>(Configuration);
         services.AddPostgres(Configuration);
+        services.AddSingleton<ScoreRepository>();
         
         services.AddRouting();
         services.AddControllers();
