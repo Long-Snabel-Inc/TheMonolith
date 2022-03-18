@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using TheMonolith.Database;
 
 public class Startup
 {
@@ -20,6 +21,7 @@ public class Startup
         });
 
         services.Options<ServiceOptions>(Configuration);
+        services.AddPostgres(Configuration);
         
         services.AddRouting();
         services.AddControllers();

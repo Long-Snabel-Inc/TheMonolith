@@ -21,7 +21,7 @@ internal static class Program
                .AddIniFile($"_config.{environment}.ini", true)
                .AddEnvironmentVariables()
                .AddCommandLine(args)
-               .AddUserSecrets("snabel-secrets");
+               .AddUserSecrets<Startup>();
         
         return builder.Build();
     }
