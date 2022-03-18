@@ -5,6 +5,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>6c0e4f28-3b10-4b2a-a5c4-abb2062b53a6</UserSecretsId>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DocumentationFile>TheMonolith.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
