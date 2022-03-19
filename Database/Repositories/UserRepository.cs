@@ -75,6 +75,33 @@ public class UserRepository
 
         return null;
     }
+    
+    
+
+    public async IAsyncEnumerable<User> GetAll()
+    {
+        await using var connection = await _database.Connection();
+        await using var command = new NpgsqlCommand("SELECT id, email, fullname, password, username FROM Users ORDER BY id", connection);
+
+        await using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            var id = reader.GetInt32(0);
+            var email = reader.GetString(1);
+            var fullname = reader.GetString(2);
+            var password = reader.GetString(3);
+            var userName = reader.GetString(4);
+
+            yield return new User
+            {
+                Id = id,
+                UserName = userName,
+                Email = email,
+                FullName = fullname,
+                Password = password
+            };
+        }
+    }
 
     public async Task<bool> ExistsUsername(string userName)
     {
