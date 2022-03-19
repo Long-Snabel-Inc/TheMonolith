@@ -25,22 +25,51 @@ public class UserRepository
     public async Task<User?> Get(int id)
     {
         await using var connection = await _database.Connection();
-        await using var command = new NpgsqlCommand("SELECT username, email, fullname FROM Users WHERE id = @id");
+        await using var command = new NpgsqlCommand("SELECT username, email, fullname, password FROM Users WHERE id = @id");
         command.Parameters.AddWithValue("id", id);
 
         await using var reader = await command.ExecuteReaderAsync();
         if (await reader.ReadAsync())
         {
-            var username = reader.GetString(0);
+            var userName = reader.GetString(0);
             var email = reader.GetString(1);
             var fullname = reader.GetString(2);
+            var password = reader.GetString(3);
 
             return new User
             {
                 Id = id,
-                UserName = username,
+                UserName = userName,
                 Email = email,
-                FullName = fullname
+                FullName = fullname,
+                Password = password
+            };
+        }
+
+        return null;
+    }
+
+    public async Task<User?> Get(string userName)
+    {
+        await using var connection = await _database.Connection();
+        await using var command = new NpgsqlCommand("SELECT id, email, fullname, password FROM Users WHERE username = @username");
+        command.Parameters.AddWithValue("username", userName);
+
+        await using var reader = await command.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            var id = reader.GetInt32(0);
+            var email = reader.GetString(1);
+            var fullname = reader.GetString(2);
+            var password = reader.GetString(3);
+
+            return new User
+            {
+                Id = id,
+                UserName = userName,
+                Email = email,
+                FullName = fullname,
+                Password = password
             };
         }
 
@@ -52,6 +81,15 @@ public class UserRepository
         await using var connection = await _database.Connection();
         await using var command = new NpgsqlCommand("SELECT COUNT(1) FROM Users WHERE username = @username LIMIT 1");
         command.Parameters.AddWithValue("username", userName);
+
+        return await command.ExecuteNonQueryAsync() > 0;
+    }
+
+    public async Task<bool> ExistsEmail(string email)
+    {
+        await using var connection = await _database.Connection();
+        await using var command = new NpgsqlCommand("SELECT COUNT(1) FROM Users WHERE email = @email LIMIT 1");
+        command.Parameters.AddWithValue("email", email);
 
         return await command.ExecuteNonQueryAsync() > 0;
     }
@@ -76,5 +114,11 @@ public class UserRepository
             FullName = fullName,
             Password = hashedPassword
         };
+    }
+
+    public async Task<bool> Login(User user, string password)
+    {
+        var hashedPassword = await HashPassword(password);
+        return hashedPassword == user.Password;
     }
 }
