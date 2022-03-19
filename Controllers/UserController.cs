@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using TheMonolith.Data;
+using TheMonolith.Models;
 
 namespace TheMonolith.Controllers;
 
@@ -25,11 +27,13 @@ public class UserController : ControllerBase
     /// <param name="user"></param>
     /// <returns></returns>
     [HttpPost("Authenticate")]
-    public IActionResult Authenticate(User user)
+    public ActionResult Authenticate([FromBody] LoginModel loginModel)
     {
         // Dummy authencation
-        if (user.UserName != "Strube")
+        if (loginModel.UserName != "Strube")
             return BadRequest("You are not Strube");
+
+        var user = new User() { UserName = "Strube" };
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(serviceOptions.PrivateKey);
@@ -45,6 +49,13 @@ public class UserController : ControllerBase
         var token = tokenHandler.CreateToken(tokenDescriptor);
         var tokenString = tokenHandler.WriteToken(token);
 
-        return Ok( tokenString );
+        return Ok( new
+        {
+            Id = user.Id,
+            FullName = user.FullName,
+            Email = user.Email,
+            UserName = user.UserName,
+            token = tokenString,
+        });
     }
 }
