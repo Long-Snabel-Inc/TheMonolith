@@ -9,20 +9,18 @@ namespace TheMonolith.Controllers;
 [Route("[controller]")]
 public class LocationController : ControllerBase
 {
-    public const string GeolocationScoreType = "LOCATION";
+    public record LocationConfig(string Name, double Radius, double Falloff, Location Location);
 
-    private readonly ScoreRepository _scoreRepository;
-    private readonly UserRepository _userRepository;
-    private readonly LocationRepository _locationRepository;
-
-    public static Location RegnecentralenLocation = new Location
+    public static readonly LocationConfig Regnecentralen = new("_RC", 100, 20, new Location()
     {
         Latitude = 56.1724716,
         Longitude = 10.1877707,
         Accuracy = 0
-    };
-
-    public const int RegnecentralenDist = 100;
+    });
+    
+    private readonly ScoreRepository _scoreRepository;
+    private readonly UserRepository _userRepository;
+    private readonly LocationRepository _locationRepository;
 
     public LocationController(ScoreRepository scoreRepository, UserRepository userRepository, LocationRepository locationRepository)
     {
@@ -60,9 +58,9 @@ public class LocationController : ControllerBase
         await _locationRepository.UpdateLocation(user, location);
         
         // RC distance
-        var distance = location.DistanceTo(RegnecentralenLocation);
+        var distance = location.DistanceTo(Regnecentralen.Location);
         var value = CalcScore(distance, 100, 20);
-        var score = new Score(user, GeolocationScoreType + "_RC", value);
+        var score = new Score(user, Score.LocationType + Regnecentralen.Name, value);
         await _scoreRepository.Create(score);
     }
 }

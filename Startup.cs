@@ -5,6 +5,7 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Text;
 using TheMonolith.Database;
 using TheMonolith.Database.Repositories;
+using TheMonolith.Services;
 
 public class Startup
 {
@@ -25,6 +26,7 @@ public class Startup
         services.AddSingleton<ScoreRepository>()
                 .AddSingleton<UserRepository>()
                 .AddSingleton<LocationRepository>();
+        services.AddSingleton<ScoreService>();
 
         services.AddCors(options =>
         {

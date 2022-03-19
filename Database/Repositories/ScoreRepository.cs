@@ -27,5 +27,19 @@ namespace TheMonolith.Database.Repositories
 
             return (double)(await command.ExecuteScalarAsync() ?? 0.0d);
         }
+
+        public async IAsyncEnumerable<Score> GetUserScores(User user)
+        {
+            await using var connection = await _database.Connection();
+            await using var command = new NpgsqlCommand("SELECT type, value FROM scores WHERE userId = @userId", connection);
+            var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var type = reader.GetString(0);
+                var value = reader.GetDouble(1);
+
+                yield return new Score(user, type, value);
+            }
+        }
     }
 }
