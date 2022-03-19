@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Npgsql;
 
 namespace TheMonolith.Database

@@ -1,7 +1,3 @@
-using System;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-
 public static class ConfigurationExtensions
 {
     public static T Instance<T>(this IConfiguration configuration)

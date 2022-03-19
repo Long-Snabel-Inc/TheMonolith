@@ -1,6 +1,3 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-
 namespace TheMonolith.Database
 {
     public static class PostgresExtensions
