@@ -1,8 +1,3 @@
-using System;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-
 internal static class Program
 {
     private static (string environment, string[] args) DeriveEnvironment(string[] args) =>
