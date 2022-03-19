@@ -22,6 +22,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPost("Authenticate")]
+    [AllowAnonymous]
     public ActionResult Authenticate([FromBody] LoginModel loginModel)
     {
         // Dummy authencation
