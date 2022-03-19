@@ -18,5 +18,14 @@ namespace TheMonolith.Database.Repositories
 
             await command.ExecuteNonQueryAsync();
         }
+
+        public async Task<double> Score(User user)
+        {
+            await using var connection = await _database.Connection();
+            await using var command = new NpgsqlCommand("SELECT SUM(Value) FROM scores WHERE userId = @userId ", connection);
+            command.Parameters.AddWithValue("userId", user.Id);
+
+            return (double)(await command.ExecuteScalarAsync() ?? 0.0d);
+        }
     }
 }
