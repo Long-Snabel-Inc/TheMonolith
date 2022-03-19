@@ -19,7 +19,8 @@ public class Startup
 
         services.Options<ServiceOptions>(Configuration);
         services.AddPostgres(Configuration);
-        services.AddSingleton<ScoreRepository>();
+        services.AddSingleton<ScoreRepository>()
+                .AddSingleton<UserRepository>();
 
         services.AddCors(options =>
         {

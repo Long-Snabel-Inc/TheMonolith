@@ -14,18 +14,13 @@ namespace TheMonolith.Controllers;
 [Route("[controller]")]
 public class UserController : ControllerBase
 {
-    private readonly ServiceOptions serviceOptions;
+    private readonly ServiceOptions _serviceOptions;
 
     public UserController(ServiceOptions serviceOptions)
     {
-        this.serviceOptions = serviceOptions;
+        _serviceOptions = serviceOptions;
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="user"></param>
-    /// <returns></returns>
     [HttpPost("Authenticate")]
     public ActionResult Authenticate([FromBody] LoginModel loginModel)
     {
@@ -36,7 +31,7 @@ public class UserController : ControllerBase
         var user = new User() { UserName = "Strube" };
 
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(serviceOptions.PrivateKey);
+        var key = Encoding.ASCII.GetBytes(_serviceOptions.PrivateKey);
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(new Claim[]
