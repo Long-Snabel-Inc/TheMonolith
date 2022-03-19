@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Npgsql;
 using TheMonolith.Data;
+using TheMonolith.Models;
 
 namespace TheMonolith.Database.Repositories;
 
@@ -25,7 +26,7 @@ public class UserRepository
     public async Task<User?> Get(int id)
     {
         await using var connection = await _database.Connection();
-        await using var command = new NpgsqlCommand("SELECT username, email, fullname, password FROM Users WHERE id = @id");
+        await using var command = new NpgsqlCommand("SELECT username, email, fullname, password FROM Users WHERE id = @id", connection);
         command.Parameters.AddWithValue("id", id);
 
         await using var reader = await command.ExecuteReaderAsync();
@@ -52,7 +53,7 @@ public class UserRepository
     public async Task<User?> Get(string userName)
     {
         await using var connection = await _database.Connection();
-        await using var command = new NpgsqlCommand("SELECT id, email, fullname, password FROM Users WHERE username = @username");
+        await using var command = new NpgsqlCommand("SELECT id, email, fullname, password FROM Users WHERE username = @username", connection);
         command.Parameters.AddWithValue("username", userName);
 
         await using var reader = await command.ExecuteReaderAsync();
@@ -79,7 +80,7 @@ public class UserRepository
     public async Task<bool> ExistsUsername(string userName)
     {
         await using var connection = await _database.Connection();
-        await using var command = new NpgsqlCommand("SELECT COUNT(1) FROM Users WHERE username = @username LIMIT 1");
+        await using var command = new NpgsqlCommand("SELECT COUNT(1) FROM Users WHERE username = @username LIMIT 1", connection);
         command.Parameters.AddWithValue("username", userName);
 
         return await command.ExecuteNonQueryAsync() > 0;
@@ -88,7 +89,7 @@ public class UserRepository
     public async Task<bool> ExistsEmail(string email)
     {
         await using var connection = await _database.Connection();
-        await using var command = new NpgsqlCommand("SELECT COUNT(1) FROM Users WHERE email = @email LIMIT 1");
+        await using var command = new NpgsqlCommand("SELECT COUNT(1) FROM Users WHERE email = @email LIMIT 1", connection);
         command.Parameters.AddWithValue("email", email);
 
         return await command.ExecuteNonQueryAsync() > 0;
@@ -99,13 +100,13 @@ public class UserRepository
         var hashedPassword = await HashPassword(password);
         
         await using var connection = await _database.Connection();
-        await using var command = new NpgsqlCommand("INSERT INTO Users (username, email, fullname, password) VALUES (@username, @email, @fullname, @password)", connection);
+        await using var command = new NpgsqlCommand("INSERT INTO Users (username, email, fullname, password) VALUES (@username, @email, @fullname, @password) RETURNING id", connection);
         command.Parameters.AddWithValue("username", userName);
         command.Parameters.AddWithValue("email", email);
         command.Parameters.AddWithValue("fullname", fullName);
         command.Parameters.AddWithValue("password", hashedPassword);
 
-        var id = await command.ExecuteNonQueryAsync();
+        var id = (int)await command.ExecuteScalarAsync();
         return new User()
         {
             Id = id,

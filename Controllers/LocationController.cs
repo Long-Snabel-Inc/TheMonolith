@@ -12,7 +12,9 @@ public class LocationController : ControllerBase
     public const string GeolocationScoreType = "LOCATION";
 
     private readonly ScoreRepository _scoreRepository;
-    
+    private readonly UserRepository _userRepository;
+    private readonly LocationRepository _locationRepository;
+
     public static Location RegnecentralenLocation = new Location
     {
         Latitude = 56.1724716,
@@ -22,9 +24,11 @@ public class LocationController : ControllerBase
 
     public const int RegnecentralenDist = 100;
 
-    public LocationController(ScoreRepository scoreRepository)
+    public LocationController(ScoreRepository scoreRepository, UserRepository userRepository, LocationRepository locationRepository)
     {
         _scoreRepository = scoreRepository;
+        _userRepository = userRepository;
+        _locationRepository = locationRepository;
     }
 
     private static double CalcScore(double distance, double radius, double boundary)
@@ -33,12 +37,31 @@ public class LocationController : ControllerBase
     }
 
     [HttpPost]
-    public async Task Post([FromBody] int userId, [FromBody] Location location)
+    public async Task Post([FromBody] Location location)
     {
+        if (int.TryParse(User.Identity?.Name, out var id))
+        {
+            var user = await _userRepository.Get(id);
+            if (user is not null)
+                await UpdateLocation(user, location);
+            else
+            {
+                Console.WriteLine("LocationController: User does not exists");
+            }
+        }
+        else
+        {
+            Console.WriteLine("LocationController: Post but not logged in");
+        }
+    }
+
+    private async Task UpdateLocation(User user, Location location)
+    {
+        await _locationRepository.UpdateLocation(user, location);
+        
         // RC distance
         var distance = location.DistanceTo(RegnecentralenLocation);
         var value = CalcScore(distance, 100, 20);
-        var user = new User();
         var score = new Score(user, GeolocationScoreType + "_RC", value);
         await _scoreRepository.Create(score);
     }

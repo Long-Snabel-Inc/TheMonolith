@@ -1,5 +1,8 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Text;
 using TheMonolith.Database;
 using TheMonolith.Database.Repositories;
 
@@ -20,7 +23,8 @@ public class Startup
         services.Options<ServiceOptions>(Configuration);
         services.AddPostgres(Configuration);
         services.AddSingleton<ScoreRepository>()
-                .AddSingleton<UserRepository>();
+                .AddSingleton<UserRepository>()
+                .AddSingleton<LocationRepository>();
 
         services.AddCors(options =>
         {
@@ -40,6 +44,42 @@ public class Startup
         services.AddControllers();
 
         services.AddSwaggerGen(ConfigureSwagger);
+
+        // configure jwt authentication
+        var key = Encoding.ASCII.GetBytes(Configuration.Instance<ServiceOptions>().PrivateKey);
+        services.AddAuthentication(x =>
+        {
+            x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(x =>
+        {
+            x.Events = new JwtBearerEvents
+            {
+                OnTokenValidated = context =>
+                {
+                    var userRepository = context.HttpContext.RequestServices.GetRequiredService<UserRepository>();
+                    var userId = int.Parse(context.Principal.Identity.Name);
+                    var user = userRepository.Get(userId);
+                    if (user == null)
+                    {
+                        // return unauthorized if user no longer exists
+                        context.Fail("Unauthorized");
+                    }
+                    return Task.CompletedTask;
+                }
+            };
+            x.RequireHttpsMetadata = false;
+            x.SaveToken = true;
+            x.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = false,
+                ValidateAudience = false
+            };
+        });
+
     }
 
     private void ConfigureSwagger(SwaggerGenOptions config)
@@ -55,10 +95,14 @@ public class Startup
         app.UseSwagger(options => options.RouteTemplate = "swagger/{documentName}/swagger.json");
         app.UseSwaggerUI(options => options.SwaggerEndpoint("/swagger/monolith/swagger.json", "The Monolith API"));
 
+        app.UseRouting();
+
         app.UseCors();
 
+        app.UseAuthentication();
+        app.UseAuthorization();
+
         app.UseForwardedHeaders();
-        app.UseRouting();
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapControllers();
