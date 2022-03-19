@@ -8,7 +8,7 @@ namespace TheMonolith.Database.Repositories
         private readonly Postgres _database;
         public ScoreRepository(Postgres database) => _database = database;
 
-        private async Task Create(Score score)
+        public async Task Create(Score score)
         {
             await using var connection = await _database.Connection();
             await using var command = new NpgsqlCommand("INSERT INTO Scores (Type, Value, UserId) VALUES (@type, @value, @userId)", connection);
