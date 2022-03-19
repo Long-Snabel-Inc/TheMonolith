@@ -7,6 +7,7 @@
     <UserSecretsId>6c0e4f28-3b10-4b2a-a5c4-abb2062b53a6</UserSecretsId>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DocumentationFile>TheMonolith.xml</DocumentationFile>
+    <NoWarn>CS1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +18,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Ini" Version="6.0.0" />
     <PackageReference Include="Npgsql" Version="6.0.3" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.1.5" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.16.0" />
   </ItemGroup>
 
   <ItemGroup>

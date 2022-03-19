@@ -1,8 +1,25 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace TheMonolith.Data
 {
-    public record User(string UserName, string Email)
+    public class User
     {
         public int Id { get; set; }
+
+        [Required]
+        [MaxLength(20)]
+        public string UserName { get; set; }
+
+        [Required]
+        [MaxLength(100)]
+        public string FullName { get; set; }
+
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+
+        [Required]
+        [MinLength(1)]
         public string Password { get; set; }
     }
 }
