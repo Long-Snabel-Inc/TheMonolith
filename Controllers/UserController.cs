@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -12,18 +11,13 @@ namespace TheMonolith.Controllers;
 [Route("[controller]")]
 public class UserController : ControllerBase
 {
-    private readonly ServiceOptions serviceOptions;
+    private readonly ServiceOptions _serviceOptions;
 
     public UserController(ServiceOptions serviceOptions)
     {
-        this.serviceOptions = serviceOptions;
+        _serviceOptions = serviceOptions;
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="user"></param>
-    /// <returns></returns>
     [HttpPost("Authenticate")]
     public IActionResult Authenticate(User user)
     {
@@ -32,7 +26,7 @@ public class UserController : ControllerBase
             return BadRequest("You are not Strube");
 
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(serviceOptions.PrivateKey);
+        var key = Encoding.ASCII.GetBytes(_serviceOptions.PrivateKey);
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(new Claim[]
