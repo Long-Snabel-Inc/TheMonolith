@@ -19,11 +19,11 @@ namespace TheMonolith.Database.Repositories
             await command.ExecuteNonQueryAsync();
         }
 
-        public async Task<double> Score(User user)
+        public async Task<double> Score(int userId)
         {
             await using var connection = await _database.Connection();
             await using var command = new NpgsqlCommand("SELECT SUM(Value) FROM scores WHERE userId = @userId ", connection);
-            command.Parameters.AddWithValue("userId", user.Id);
+            command.Parameters.AddWithValue("userId", userId);
 
             return (double)(await command.ExecuteScalarAsync() ?? 0.0d);
         }
@@ -32,6 +32,7 @@ namespace TheMonolith.Database.Repositories
         {
             await using var connection = await _database.Connection();
             await using var command = new NpgsqlCommand("SELECT type, value FROM scores WHERE userId = @userId", connection);
+            command.Parameters.AddWithValue("userId", user.Id);
             var reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {

@@ -75,7 +75,6 @@ public class UserController : ControllerBase
     }
 
     [HttpGet("{userId:int}/Score")]
-    [AllowAnonymous]
     public async Task<ActionResult<double>> GetScore([FromRoute] int userId)
     {
         var user = await _userRepository.Get(userId);
@@ -86,13 +85,12 @@ public class UserController : ControllerBase
 
         return await _scoreService.GetWeightedScore(user!);
     }
-    
-    
 
-    [HttpGet]
-    public async Task<ActionResult> AllUsers()
+    [HttpGet("AllUsers")]
+    public async Task<ActionResult<List<User>>> AllUsers()
     {
         var allUsers = _userRepository.GetAll();
+
         return Ok(allUsers);
     }
 
