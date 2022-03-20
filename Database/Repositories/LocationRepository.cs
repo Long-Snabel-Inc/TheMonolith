@@ -1,4 +1,5 @@
 ﻿using Npgsql;
+using NpgsqlTypes;
 using TheMonolith.Data;
 using TheMonolith.Models;
 
@@ -22,22 +23,66 @@ public class LocationRepository
         var rows = await command.ExecuteNonQueryAsync();
     }
 
-    public async Task<IEnumerable<User>> UsersInRange(Location location, double radius)
+    public async IAsyncEnumerable<int> UsersInRange(User user, Location location, double radius)
     {
         await using var connection = await _database.Connection();
         await using var command = new NpgsqlCommand(
-            "SELECT \"userId\", location <@> point(@longitude, @latitude) as distance FROM locations", connection);
+            @"SELECT ""userId"" FROM locations 
+                        WHERE (location <@> point(@longitude, @latitude)) < @radius
+                        AND ""userId"" != @userId", connection);
         command.Parameters.AddWithValue("@longitude", location.Longitude);
         command.Parameters.AddWithValue("@latitude", location.Latitude);
+        command.Parameters.AddWithValue("@radius", radius / 1609.34);
+        command.Parameters.AddWithValue("@userId", user.Id);
+
+        var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            yield return reader.GetInt32(0);
+        }
+    }
+
+    public async Task<Location?> GetLocation(User user)
+    {
+        await using var connection = await _database.Connection();
+        await using var command =
+            new NpgsqlCommand("SELECT location FROM locations WHERE \"userId\" = @userId", connection);
+        command.Parameters.AddWithValue("@userId", user.Id);
+
+        var reader = await command.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            var point = reader.GetFieldValue<NpgsqlPoint>(0);
+            return new Location
+            {
+                Longitude = point.X,
+                Latitude = point.Y
+            };
+        }
+        return null;
+    }
+
+    public async Task<int?> GetClosestUserId(User user)
+    {
+        var location = await GetLocation(user);
+        if (location is null) return null;
+        
+        await using var connection = await _database.Connection();
+        await using var command = new NpgsqlCommand(
+            @"SELECT ""userId"", location <@> point(@longitude, @latitude) as distance FROM locations 
+                WHERE ""userId"" != @userId
+                ORDER BY distance LIMIT 1", connection);
+        command.Parameters.AddWithValue("@longitude", location.Longitude);
+        command.Parameters.AddWithValue("@latitude", location.Latitude);
+        command.Parameters.AddWithValue("@userId", user.Id);
 
         var reader = await command.ExecuteReaderAsync();
         while (await reader.ReadAsync())
         {
             var userId = reader.GetInt32(0);
-            var distance = reader.GetFloat(1);
-            Console.WriteLine("UserId: " + userId + " Distance: " + distance);
+            return userId;
         }
 
-        return Array.Empty<User>();
+        return null;
     }
 }

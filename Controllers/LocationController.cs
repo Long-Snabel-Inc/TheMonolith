@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Cryptography.X509Certificates;
+using Microsoft.AspNetCore.Mvc;
 using TheMonolith.Data;
 using TheMonolith.Database.Repositories;
 using TheMonolith.Models;
@@ -53,14 +54,67 @@ public class LocationController : ControllerBase
         }
     }
 
+    [HttpPost("TestLocations")]
+    public async Task UpdateTestLocations()
+    {
+        double NextDouble(Random randGenerator, double minValue, double maxValue)
+        {
+            return randGenerator.NextDouble() * (maxValue - minValue) + minValue;
+        }
+        
+        var rand = new Random();
+        for (var i = 1; i <= 10; i++)
+        {
+            //56.17180510868501, 10.187760079584908
+            //56.1714048485343, 10.190395035386228
+            var lat = NextDouble(rand, 56.1714048485343, 56.17180510868501);
+            var lon = NextDouble(rand, 10.187760079584908, 10.190395035386228);
+            var user = await _userRepository.Get("test" + i);
+            await _locationRepository.UpdateLocation(user!, new Location
+            {
+                Accuracy = 0,
+                Latitude = lat,
+                Longitude = lon
+            });
+        }
+    }
+    
+    [HttpPost("{userId:int}/Range")]
+    public async Task<IActionResult> TestUserRange(int userId, [FromBody] Location location)
+    {
+        var user = await _userRepository.Get(userId);
+        if (user is null)
+        {
+            return NotFound();
+        }
+
+        var userIds = _locationRepository.UsersInRange(user, location, 50);
+        return Ok();
+    }
+
     private async Task UpdateLocation(User user, Location location)
     {
         await _locationRepository.UpdateLocation(user, location);
-        
-        // RC distance
-        var distance = location.DistanceTo(Regnecentralen.Location);
-        var value = CalcScore(distance, 100, 20);
-        var score = new Score(user, Score.LocationType + Regnecentralen.Name, value);
-        await _scoreRepository.Create(score);
+        await UpdateUserLocation(user, location);
+        await UpdateLocationScores(user, location, new[]
+        {
+            Regnecentralen
+        });
+    }
+
+    private async Task UpdateLocationScores(User user, Location location, IEnumerable<LocationConfig> configs)
+    {
+        foreach (var config in configs)
+        {
+            var distance = location.DistanceTo(config.Location);
+            var value = CalcScore(distance, config.Radius, config.Falloff);
+            var score = new Score(user, Score.LocationType + config.Name, value);
+            await _scoreRepository.Create(score);
+        }
+    }
+
+    private async Task UpdateUserLocation(User user, Location location)
+    {
+        var userIds = _locationRepository.UsersInRange(user, location, 2000);
     }
 }
