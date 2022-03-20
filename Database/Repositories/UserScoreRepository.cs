@@ -34,6 +34,7 @@ namespace TheMonolith.Database.Repositories
         {
             await using var connection = await _database.Connection();
             await using var command = new NpgsqlCommand("SELECT UpdatedAt FROM UserScores WHERE source = @source ORDER BY UpdatedAt DESC LIMIT 1", connection);
+            command.Parameters.AddWithValue("source", user.Id);
 
             var reader = await command.ExecuteReaderAsync();
             if (await reader.ReadAsync())
