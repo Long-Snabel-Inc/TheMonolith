@@ -92,7 +92,8 @@ public class UserController : ControllerBase
     [HttpGet]
     public async Task<ActionResult> AllUsers()
     {
-        return Ok(new List<User>());
+        var allUsers = _userRepository.GetAll();
+        return Ok(allUsers);
     }
 
     private string tokenString(User user)
