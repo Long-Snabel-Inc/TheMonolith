@@ -23,14 +23,16 @@ public class UserController : ControllerBase
     private readonly ServiceOptions _serviceOptions;
     private readonly UserRepository _userRepository;
     private readonly ScoreRepository _scoreRepository;
+    private readonly UserScoreRepository _userScoreRepository;
     private readonly ScoreService _scoreService;
     private readonly ILogger<UserController> _logger;
 
-    public UserController(ServiceOptions serviceOptions, UserRepository userRepository, ScoreRepository scoreRepository, ILogger<UserController> logger, ScoreService scoreService)
+    public UserController(ServiceOptions serviceOptions, UserRepository userRepository, ScoreRepository scoreRepository, UserScoreRepository userScoreRepository, ILogger<UserController> logger, ScoreService scoreService)
     {
         _serviceOptions = serviceOptions;
         _userRepository = userRepository;
         _scoreRepository = scoreRepository;
+        _userScoreRepository = userScoreRepository;
         _logger = logger;
         _scoreService = scoreService;
     }
@@ -62,7 +64,7 @@ public class UserController : ControllerBase
 
         var user = await _userRepository.Create(registerModel.UserName, registerModel.Email, registerModel.FullName, registerModel.Password);
 
-        JudgeFromGoogle(user);
+        await JudgeFromGoogle(user);
 
         return Ok(new
         {
@@ -94,6 +96,27 @@ public class UserController : ControllerBase
         return Ok(allUsers);
     }
 
+    [HttpGet("LastRating")]
+    public async Task<ActionResult<DateTime>> LastRating()
+    {
+        if (int.TryParse(User.Identity?.Name, out var id))
+        {
+            return Ok(await _userScoreRepository.LatestUpdate(id));
+        }
+        return BadRequest("Not Logged In");
+    }
+
+    [HttpGet("Rate/{userId:int}/{i:int}")]
+    public async Task<ActionResult<DateTime>> Rate([FromRoute] int userId, [FromRoute] int i)
+    {
+        if (int.TryParse(User.Identity?.Name, out var id))
+        {
+            await _userScoreRepository.Upsert(id, userId, i);
+            return Ok(i);
+        }
+        return BadRequest("Not Logged In");
+    }
+
     private string tokenString(User user)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
@@ -111,7 +134,7 @@ public class UserController : ControllerBase
         return tokenHandler.WriteToken(token);
     }
 
-    private async void JudgeFromGoogle(User user)
+    private async Task JudgeFromGoogle(User user)
     {
         var start = new ProcessStartInfo
         {

@@ -42,12 +42,12 @@ public class LocationRepository
         }
     }
 
-    public async Task<Location?> GetLocation(User user)
+    public async Task<Location?> GetLocation(int userId)
     {
         await using var connection = await _database.Connection();
         await using var command =
             new NpgsqlCommand("SELECT location FROM locations WHERE \"userId\" = @userId", connection);
-        command.Parameters.AddWithValue("@userId", user.Id);
+        command.Parameters.AddWithValue("@userId", userId);
 
         var reader = await command.ExecuteReaderAsync();
         if (await reader.ReadAsync())
@@ -62,9 +62,9 @@ public class LocationRepository
         return null;
     }
 
-    public async Task<int?> GetClosestUserId(User user)
+    public async Task<int?> GetClosestUserId(int userId)
     {
-        var location = await GetLocation(user);
+        var location = await GetLocation(userId);
         if (location is null) return null;
         
         await using var connection = await _database.Connection();
@@ -74,13 +74,12 @@ public class LocationRepository
                 ORDER BY distance LIMIT 1", connection);
         command.Parameters.AddWithValue("@longitude", location.Longitude);
         command.Parameters.AddWithValue("@latitude", location.Latitude);
-        command.Parameters.AddWithValue("@userId", user.Id);
+        command.Parameters.AddWithValue("@userId", userId);
 
         var reader = await command.ExecuteReaderAsync();
         while (await reader.ReadAsync())
         {
-            var userId = reader.GetInt32(0);
-            return userId;
+            return reader.GetInt32(0);
         }
 
         return null;

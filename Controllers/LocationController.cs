@@ -18,7 +18,7 @@ public class LocationController : ControllerBase
         Longitude = 10.1877707,
         Accuracy = 0
     });
-    
+
     private readonly ScoreRepository _scoreRepository;
     private readonly UserRepository _userRepository;
     private readonly LocationRepository _locationRepository;
@@ -61,7 +61,7 @@ public class LocationController : ControllerBase
         {
             return randGenerator.NextDouble() * (maxValue - minValue) + minValue;
         }
-        
+
         var rand = new Random();
         for (var i = 1; i <= 10; i++)
         {
@@ -78,7 +78,7 @@ public class LocationController : ControllerBase
             });
         }
     }
-    
+
     [HttpPost("{userId:int}/Range")]
     public async Task<IActionResult> TestUserRange(int userId, [FromBody] Location location)
     {
@@ -90,6 +90,24 @@ public class LocationController : ControllerBase
 
         var userIds = _locationRepository.UsersInRange(user, location, 50);
         return Ok();
+    }
+
+    [HttpGet("ClosestUser")]
+    public async Task<ActionResult<User>> ClosestUser()
+    {
+        if (int.TryParse(User.Identity?.Name, out var id))
+        {
+            var closestUser = await _locationRepository.GetClosestUserId(id);
+            if (closestUser is not null)
+            {
+                return Ok(await _userRepository.Get(closestUser.Value));
+            }
+            else
+            {
+                return BadRequest("There is not a close user");
+            }
+        }
+        return BadRequest("Not Logged In");
     }
 
     private async Task UpdateLocation(User user, Location location)
