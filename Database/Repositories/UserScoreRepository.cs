@@ -29,5 +29,19 @@ namespace TheMonolith.Database.Repositories
                 await command.ExecuteNonQueryAsync();
             }
         }
+
+        public async Task<DateTime> LatestUpdate(User user)
+        {
+            await using var connection = await _database.Connection();
+            await using var command = new NpgsqlCommand("SELECT UpdatedAt FROM UserScores WHERE source = @source ORDER BY UpdatedAt DESC LIMIT 1", connection);
+
+            var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return reader.GetDateTime(0);
+            }
+
+            return DateTime.MinValue;
+        }
     }
 }
