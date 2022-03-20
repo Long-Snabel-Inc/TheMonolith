@@ -44,5 +44,20 @@ namespace TheMonolith.Database.Repositories
 
             return DateTime.MinValue;
         }
+
+        public async Task<List<double>> ScoresForTarget(int userId)
+        {
+            await using var connection = await _database.Connection();
+            await using var command = new NpgsqlCommand("SELECT score FROM UserScores WHERE target = @target", connection);
+            command.Parameters.AddWithValue("target", userId);
+
+            var reader = await command.ExecuteReaderAsync();
+            var scores = new List<double>();
+            while (await reader.ReadAsync())
+            {
+                scores.Add(reader.GetDouble(0));
+            }
+            return scores;
+        } 
     }
 }

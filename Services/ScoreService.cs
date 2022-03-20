@@ -15,10 +15,12 @@ public class ScoreService
     };
 
     private readonly ScoreRepository _scoreRepository;
+    private readonly UserScoreRepository _userScoreRepository;
 
-    public ScoreService(ScoreRepository scoreRepository)
+    public ScoreService(ScoreRepository scoreRepository, UserScoreRepository userScoreRepository)
     {
         _scoreRepository = scoreRepository;
+        _userScoreRepository = userScoreRepository;
     }
 
     public async Task<double> GetWeightedScore(User user)
@@ -30,6 +32,10 @@ public class ScoreService
             var weight = Weights.GetValueOrDefault(type, 1.0);
             score += weight * value;
         }
+
+        var userScores = await _userScoreRepository.ScoresForTarget(user.Id);
+        score += userScores.Select(score => (double)score - 2.5).Sum();
+
         return score;
     }
 }
